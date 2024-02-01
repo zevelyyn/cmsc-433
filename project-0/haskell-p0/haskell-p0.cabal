@@ -1,6 +1,6 @@
 cabal-version: 2.2
 
--- This file has been generated from package.yaml by hpack version 0.34.2.
+-- This file has been generated from package.yaml by hpack version 0.36.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -28,6 +28,8 @@ library
       Lib
   other-modules:
       Paths_haskell_p0
+  autogen-modules:
+      Paths_haskell_p0
   hs-source-dirs:
       src
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
@@ -38,6 +40,8 @@ library
 executable haskell-p0-exe
   main-is: Main.hs
   other-modules:
+      Paths_haskell_p0
+  autogen-modules:
       Paths_haskell_p0
   hs-source-dirs:
       app
@@ -51,6 +55,8 @@ test-suite haskell-p0-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      Paths_haskell_p0
+  autogen-modules:
       Paths_haskell_p0
   hs-source-dirs:
       test
