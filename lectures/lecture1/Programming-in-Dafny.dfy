@@ -36,18 +36,18 @@ function size<T>(t: Tree<T>): int {
 
 // (==), 0, 00, !new
 
-  datatype Status<T> =
-    | Success(value: T)
-    | Failure(error: string)
-  {
+datatype Status<T> =
+  | Success(value: T)
+  | Failure(error: string)
+{
 
-    predicate IsFailure() { this.Failure? }
+  predicate IsFailure() { this.Failure? }
 
-    function PropagateFailure(): Status<T> { this }
+  function PropagateFailure(): Status<T> { this }
 
-    function Extract(): T { this.value }
+  function Extract(): T { this.value }
 
-  }
+}
 
 // Write the following ocaml program in Dafny:
 // let f x = Some x 
