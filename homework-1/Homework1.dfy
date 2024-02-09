@@ -16,10 +16,10 @@ function mystery_function(x:int,y:int,z:int):int {
     (a + b + c)/2
 }
 
-method Main() {
-    var a := mystery_function(1, 2, 4);
-    print(a);
-}
+// method Main() {
+//     var a := mystery_function(1, 2, 4);
+//     print(a);
+// }
 
 /* Exercise 2 (20 points)
 
@@ -92,5 +92,32 @@ function insert<T> (m:MapSet<T>, x:T): MapSet<T> {
 }
 
 function delete<T> (m:MapSet<T>, x:T): MapSet<T> {
-    MapSet(s := m.s[x := false])
+    MapSet(s := m.s - {x})
 }
+
+// method Main() {
+//     // Create a new MapSet
+//     var mySet := MapSet(s := map[]);
+
+//     // Insert some elements into the set
+//     mySet := insert(mySet, 1);
+//     mySet := insert(mySet, 2);
+//     mySet := insert(mySet, 3);
+
+//     print(mySet);
+//     // Test membership
+//     assert member(mySet, 1);
+//     assert member(mySet, 2);
+//     assert member(mySet, 3);
+//     assert !member(mySet, 4);
+
+//     // Test size
+//     assert size(mySet) == 3;
+//     print(size(mySet));
+
+//     // Delete an element
+//     mySet := delete(mySet, 2);
+//     assert !member(mySet, 2);
+//     assert size(mySet) == 2;
+//     print(size(mySet));
+// }
