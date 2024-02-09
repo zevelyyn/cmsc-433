@@ -80,21 +80,17 @@ wrapper, by invoking Dafny map functions as seen on the slides.
 datatype MapSet<T> = MapSet (s : map<T,bool>)
 
 predicate member<T> (m:MapSet<T>, x:T) {
-    m.s[x]
+    x in m.s
 }
 
 function size<T> (m:MapSet<T>): int {
-    var count:int := 0;
-    for key in m.s.Keys {
-        count := count + 1
-    }
-    count
+    |m.s|
 }
 
 function insert<T> (m:MapSet<T>, x:T): MapSet<T> {
-    m.s[x] := true
+    MapSet(s := m.s[x := true])
 }
 
 function delete<T> (m:MapSet<T>, x:T): MapSet<T> {
-    m.s[x] := false
+    MapSet(s := m.s[x := false])
 }
