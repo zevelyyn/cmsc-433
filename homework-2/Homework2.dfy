@@ -86,7 +86,7 @@ method IsSorted (a : array<int>) returns (isSorted : bool)
     {
         while (i < a.Length)
             invariant 0 <= i - 1 < i <= a.Length 
-            // invariant // TODO
+            invariant isSorted <==> forall j : int :: 1 <= j < i ==> a[j - 1] <= a[j]  // TODO
         {
             if a[i-1] > a[i]
             {
@@ -106,7 +106,22 @@ method IsPrime (m : int) returns (isPrime : bool)
     requires m > 0
     ensures isPrime <==> (m > 1 && forall j : int :: 2 <= j < m ==> m % j != 0)
 {
-    // isPrime := true;
+    isPrime := true;
+    var i:int := m - 1;
+    if (m < 2) {
+        return false;
+    }
+    else {
+        while (i > 1) 
+            invariant m > i >= 1
+            invariant forall j : int :: i < j < m ==> m % j != 0
+        {
+            if (m % i == 0) {
+                return false;
+            }
+            i := i - 1;
+        }
+    }
 
 }
 
@@ -122,7 +137,16 @@ method Reverse (a : array<int>) returns (aRev : array<int>)
     ensures forall i : int :: 0 <= i < a.Length ==> a[i] == aRev[aRev.Length-i-1]
     ensures fresh(aRev) // Indicates returned object is newly created in method body
 {
-    // TODO
+    aRev := new int[a.Length];
+    var i : int := 0;
+    
+    while (i < aRev.Length) 
+        invariant 0 <= i <= aRev.Length 
+        invariant forall j : int :: 0 <= j < i ==> aRev[j] == a[a.Length - j - 1]
+    {
+        aRev[i] := a[a.Length - i - 1];
+        i := i + 1;
+    }
 }
 
 // Question 8 (15 points)
@@ -153,26 +177,50 @@ function pow2(n : nat) : nat {
   case _ => 2 * (pow2 (n-1))
 }
 
+// TESTING
+method f(m : nat) {
+    assert 0 == 0;
+    var x := 0;
+    assert x == 0 && 1 == 1;
+    var y := 1;
+    assert y == 1 && 1 == 1;
+    var z := 1;
+    assert 0 <= x <= m && y == pow2(x + 1) - 1 && z == pow2(x);
+    while x != m 
+        invariant 0 <= x <= m
+        invariant y == pow2(x + 1) - 1 && z == pow2(x)
+    {
+      assert y + 2 * z == pow2(x + 2) - 1 && 2 * z == pow2(x + 1);
+      z := 2 * z;
+      assert y + z == pow2(x + 2) - 1 && z == pow2(x + 1);
+      y := y + z;
+      assert y == pow2(x + 2) - 1 && z == pow2(x + 1); 
+      x := x + 1;
+      assert y == pow2(x + 1) - 1 && z == pow2(x);
+    }
+    assert y == pow2(m+1) - 1;
+}
+
 /* 
     { true } ->
-(1)    { FILL_IN_HERE }
+(1)    { 0 == 0 }
       x := 0;
-(2)    { FILL_IN_HERE }
+(2)    { x == 0 && 1 == 1}
       y := 1;
-(3)    { FILL_IN_HERE };
+(3)    { y == 1 && 1 == 1 };
       z := 1;
-(4)    { FILL_IN_HERE }
+(4)    { y == pow2(x + 1) - 1 && z == pow2(x) }
       while x != n {
-(5)       { FILL_IN_HERE } ->
-(6)       { FILL_IN_HERE }
+(5)       { 0 <= x <= n && y == pow2(x + 1) - 1 && z == pow2(x) && x != n } ->
+(6)       { 0 <= (x + 1) <= n && y + (2 * z) == pow2(x + 2) - 1 && (2 * z) == pow2(x + 1) }
         z := 2 * z;
-(7)       { FILL_IN_HERE }
+(7)       { 0 <= (x + 1) <= n && y + z == pow2(x + 2) - 1 && z == pow2(x + 1) }
         y := y + z;
-(8)       { FILL_IN_HERE }
+(8)       { 0 <= (x + 1) <= n && y == pow2(x + 2) - 1 && z == pow2(x + 1) }
         x := x + 1;
-(9)       { FILL_IN_HERE }
+(9)       { 0 <= x <= n && y == pow2(x + 1) - 1 && z == pow2(x) }
       }
-(10)  { FILL_IN_HERE } ->
+(10)  { 0 <= x <= n && y == pow2(x + 1) - 1 && z == pow2(x) && !(x != n) } ->
       { y == pow2 (n+1) - 1 }
 */
 
@@ -188,7 +236,7 @@ function pow2(n : nat) : nat {
        x := x + 1;
        z := z + 1;
      };
-     while y <> b {
+     while y != b {
        y := y + 1;
        z := z + 1;
      }
@@ -198,34 +246,63 @@ function pow2(n : nat) : nat {
     change anything else about the programs. Only replace "FILL_IN_HERE" with
     your assertions---they should be valid Dafny propositions.
 */
+method g(a:nat, b: nat, c: nat) {
+    assert 0 == 0;
+    var x := 0;
+    assert x == 0 && 0 == 0;
+    var y := 0;
+    assert y == 0 && c == c;
+    var z := c;
+    while x != a 
+        invariant 0 <= x <= a && z == x + c
+    {
+        assert 0 <= (x + 1) <= a && (z + 1) == (x + 1) + c;
+        x := x + 1;
+        assert 0 <= x <= a && (z + 1) == x + c;
+        z := z + 1;
+        assert 0 <= x <= a && z == x + c;
+    }
+    assert 0 <= x <= a && z == x + c && !(x != a);
+    assert 0 <= y <= b && z == y + x + c;
+    while y != b 
+        invariant 0 <= y <= b && z == y + x + c
+    {
+        assert 0 <= (y + 1) <= b && (z + 1) == (y + 1) + x + c;
+        y := y + 1;
+        assert  0 <= y <= b && (z + 1) == y + x + c;
+        z := z + 1;
+        assert 0 <= y <= b && z == y + x + c;
+    }
+    assert z == a + b + c;
+}
 
 /*
     { true } ->
-(a) { FILL_IN_HERE }
+(a) { 0 == 0 }
       x := 0;
-(b)                { FILL_IN_HERE }
+(b)                { x == 0 && 0 == 0 }
       y := 0;
-(c)                { FILL_IN_HERE }
+(c)                { y == 0 && c == c }
       z := c;
-(d)                { FILL_IN_HERE }
+(d)                { 0 <= x <= a && z == x + c }
       while x != a {
-(e)                { FILL_IN_HERE } ->
-(f)                { FILL_IN_HERE }
+(e)                { 0 <= x <= a && z == x + c && x != a } ->
+(f)                { 0 <= (x + 1) <= a && (z + 1) == (x + 1) + c }
         x := x + 1;
-(g)                { FILL_IN_HERE }
+(g)                { 0 <= x <= a && (z + 1) == x + c }
         z := z + 1;
-(h)                { FILL_IN_HERE }
+(h)                { 0 <= x <= a && z == x + c }
       end;
-(i)                { FILL_IN_HERE } ->
-(j)                { FILL_IN_HERE }
+(i)                { 0 <= x <= a && z == x + c && !(x != a) } ->
+(j)                { 0 <= y <= b && z == y + x + c }
       while y != b {
-(k)                { FILL_IN_HERE } ->
-(l)                { FILL_IN_HERE }
+(k)                { 0 <= y <= b && z == y + x + c && y != b } ->
+(l)                { 0 <= (y + 1) <= b && (z + 1) == (y + 1) + x + c }
         y := y + 1;
-(m)                { FILL_IN_HERE }
+(m)                { 0 <= y <= b && (z + 1) == y + x + c }
         z := z + 1;
-(n)                { FILL_IN_HERE }
+(n)                { 0 <= y <= b && z == y + x + c }
       }
-(o) { FILL_IN_HERE } ->
+(o) { 0 <= y <= b && z == y + x + c && !(x != a) } ->
     { z == a + b + c }
 */

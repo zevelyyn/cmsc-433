@@ -24,6 +24,7 @@ method ComputeFib(n: nat) returns (b: nat)
    }
    // b == fib(i)
    // a == fib(i - 1)
-   //
+   // !(i<n)
+   // --------------------
    // conclude b == fib(n)
 }
