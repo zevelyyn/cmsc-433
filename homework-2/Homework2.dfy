@@ -25,7 +25,7 @@ method PlusOne (x : int) returns (y : int)
 // in method Swap (which swaps elements i and j in array a).
 
 method Swap (a : array<int>, i : int, j : int)
-    requires 0 <= i <= j < a.Length // TODO
+    requires a.Length > 0 && 0 <= i < a.Length && 0 <= j < a.Length // TODO
     modifies a  // Dafny requires listing of objects modified in a method
 {
     var tmp : int := a[i];
@@ -42,7 +42,7 @@ method Swap (a : array<int>, i : int, j : int)
 
 method IntDiv (m : int, n : int) returns (d : int, r : int)
     requires n > 0
-    ensures d * n <= m // TODO
+    ensures d * n + r == m // TODO
 {
     return m / n, m % n;
 }
@@ -55,7 +55,7 @@ method IntDiv (m : int, n : int) returns (d : int, r : int)
 
 method ArraySum (a : array<int>, b : array<int>) returns (c : array<int>)
     requires a.Length == b.Length
-    ensures c.Length == a.Length == b.Length // TODO
+    ensures c.Length == a.Length && forall i : int :: 0 <= i < a.Length ==> c[i] == a[i] + b[i] // TODO
 {
     c := new int [a.Length];  // Creates new array of size a.Length
     var i : int := 0;
@@ -183,7 +183,7 @@ method f(m : nat) {
     var x := 0;
     assert x == 0 && 1 == 1;
     var y := 1;
-    assert y == 1 && 1 == 1;
+    assert x == 0 && y == 1 && 1 == 1;
     var z := 1;
     assert 0 <= x <= m && y == pow2(x + 1) - 1 && z == pow2(x);
     while x != m 
@@ -198,6 +198,7 @@ method f(m : nat) {
       x := x + 1;
       assert y == pow2(x + 1) - 1 && z == pow2(x);
     }
+    assert 0 <= x <= m && y == pow2(x + 1) - 1 && z == pow2(x) && !(x != m);
     assert y == pow2(m+1) - 1;
 }
 
@@ -207,7 +208,7 @@ method f(m : nat) {
       x := 0;
 (2)    { x == 0 && 1 == 1}
       y := 1;
-(3)    { y == 1 && 1 == 1 };
+(3)    { x == 0 && y == 1 && 1 == 1 };
       z := 1;
 (4)    { y == pow2(x + 1) - 1 && z == pow2(x) }
       while x != n {
@@ -251,8 +252,9 @@ method g(a:nat, b: nat, c: nat) {
     var x := 0;
     assert x == 0 && 0 == 0;
     var y := 0;
-    assert y == 0 && c == c;
+    assert x == 0 && y == 0 && c == c;
     var z := c;
+    assert 0 <= x <= a && z == x + c;
     while x != a 
         invariant 0 <= x <= a && z == x + c
     {
@@ -273,6 +275,7 @@ method g(a:nat, b: nat, c: nat) {
         z := z + 1;
         assert 0 <= y <= b && z == y + x + c;
     }
+    assert !(x != a) && 0 <= y <= b && z == y + x + c && !(x != a);
     assert z == a + b + c;
 }
 
@@ -282,7 +285,7 @@ method g(a:nat, b: nat, c: nat) {
       x := 0;
 (b)                { x == 0 && 0 == 0 }
       y := 0;
-(c)                { y == 0 && c == c }
+(c)                { x == 0 && y == 0 && c == c }
       z := c;
 (d)                { 0 <= x <= a && z == x + c }
       while x != a {
@@ -303,6 +306,6 @@ method g(a:nat, b: nat, c: nat) {
         z := z + 1;
 (n)                { 0 <= y <= b && z == y + x + c }
       }
-(o) { 0 <= y <= b && z == y + x + c && !(x != a) } ->
+(o) { 0 <= y <= b && z == y + x + c && !(y != b) } ->
     { z == a + b + c }
 */
