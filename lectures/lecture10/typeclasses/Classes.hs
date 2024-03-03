@@ -167,7 +167,10 @@ by using 'deriving' like we saw in [`Datatypes`](Datatypes.html)!)
 
 instance Eq a => Eq (Tree a) where
   (==) :: Tree a -> Tree a -> Bool
-  t1 == t2 = undefined
+  Empty == Empty = True
+  (Branch x1 l1 r1) == (Branch x2 l2 r2) =
+    x1 == x2 && l1 == l2 && r1 == r2
+  _== _ = False
 
 {-
 This code tells Haskell how to compare `Tree a`s for equality as long
@@ -297,7 +300,7 @@ data Point = Point Double Double
   deriving (Eq)
 
 data Shape
-  = Circle Point Float
+  = Circle Point Float -- center & radius
   | Rectangle Point Point
   deriving (Eq)
 
@@ -822,7 +825,7 @@ See if you can define a Functor instance for this type:
 data Two a = MkTwo a a deriving (Eq, Show, Read, Ord)
 
 instance Functor Two where
-  fmap = undefined
+  fmap f (MkTwo a1 a2) = MkTwo (f a1) (f a2)
 
 {-
 In the meantime, think about what laws instances of this class should

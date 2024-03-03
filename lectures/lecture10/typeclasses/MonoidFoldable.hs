@@ -145,8 +145,15 @@ respectively.
 foldList :: Monoid b => [b] -> b
 foldList = List.foldr (<>) mempty
 
+-- (<>) :: Semigroup a => a -> a -> a
+-- mempty :: Monoid a => A
+
 ten :: Int
-ten = getSum (foldList (map Sum [1,2,3,4]))
+-- ten = getSum (foldList (map Sum [1,2,3,4]))
+ten = getSum (foldList (Sum <$> [1,2,3,4]))
+
+-- sum = foldr (+) 0
+-- product = foldr (*) 1
 
 twentyfour :: Int
 twentyfour = getProduct (foldList (map Product [1,2,3,4]))
