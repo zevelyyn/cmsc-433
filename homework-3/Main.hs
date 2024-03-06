@@ -49,9 +49,9 @@ main :: IO ()
 main = do
   runTestTT testStyle
   runTestTT testLists
-  runTestTT testHO
-  runTestTT testFoldr
-  runTestTT testTree
+  -- runTestTT testHO
+  -- runTestTT testFoldr
+  -- runTestTT testTree
   return ()
 
 {-
@@ -96,10 +96,10 @@ where) can and should be renamed.
 -- Part One
 
 abc :: Bool -> Bool -> Bool -> Bool
-abc x y z =
-  if x then if y then True else
-       if (x && z) then True else False
-  else False
+abc x y z = x && (y || z)
+  -- if x then if y then True else
+  --      if (x && z) then True else False
+  -- else False
 
 tabc :: Test
 tabc = "abc" ~: TestList [abc True False True  ~?= True,
@@ -109,17 +109,11 @@ tabc = "abc" ~: TestList [abc True False True  ~?= True,
 -- Part Two
 
 arithmetic :: ((Int, Int), Int) -> ((Int,Int), Int) -> (Int, Int, Int)
-arithmetic x1 x2 =
-     let a = fst (fst x1) in
-     let b = snd (fst x1) in
-     let c = snd x1 in
-     let d = fst (fst x2) in
-     let e = snd (fst x2) in
-     let f = snd x2
-       in
-       ((((((b*f) - (c*e)), ((c*
-       d) - (a*f)
-       ), ((a*e)-(b*d))))))
+arithmetic ((a, b), c) ((d, e), f) =
+  let x = ((b * f) - (c * e)) in
+  let y = ((c * d) - (a * f)) in
+  let z = ((a * e) - (b * d)) in
+    (x, y, z)
 
 tarithmetic :: Test
 tarithmetic = "arithmetic" ~:
@@ -128,10 +122,14 @@ tarithmetic = "arithmetic" ~:
 
 -- Part Three
 
+reverse :: [a] -> [a]
 reverse l  = reverseAux l [] where
-  reverseAux l acc =
-    if null l then acc
-       else reverseAux (tail l) (head l : acc)
+  reverseAux :: [a] -> [a] -> [a]
+  reverseAux [] acc = acc
+  reverseAux (x : xs) acc = reverseAux xs (x : acc)
+  -- reverseAux l acc =
+  --   if null l then acc
+  --      else reverseAux (tail l) (head l : acc)
 
 treverse :: Test
 treverse = "reverse" ~: TestList
@@ -140,9 +138,13 @@ treverse = "reverse" ~: TestList
 
 -- Part Four
 
-zip xs ys = g 0 xs ys where
-  g n xs ys = if n == length xs || n == length ys then [] else
-          (xs !! n, ys !! n) : g (n + 1) xs ys
+zip :: [a] -> [b] -> [(a, b)]
+zip [] _ = []
+zip _ [] = []
+zip (x : xs) (y : ys) = (x, y) : zip xs ys
+-- zip xs ys = g 0 xs ys where
+--   g n xs ys = if n == length xs || n == length ys then [] else
+--           (xs !! n, ys !! n) : g (n + 1) xs ys
 
 tzip :: Test
 tzip = "zip" ~:
@@ -193,7 +195,12 @@ testLists = "testLists" ~: TestList
 -- >>> minumumMaybe [2,1,3]
 -- Just 1 
 minimumMaybe :: [Int] -> Maybe Int
-minimumMaybe = undefined
+minimumMaybe [] = Nothing
+minimumMaybe [x] = Just x
+minimumMaybe (x : xs) = 
+  case minimumMaybe xs of
+    Just y -> Just (min x y)
+    Nothing -> Just x
 
 tminimumMaybe :: Test
 tminimumMaybe =
@@ -210,7 +217,9 @@ tminimumMaybe =
 -- >>> "Hello" `startsWith` "Wello Horld!"
 -- False
 startsWith :: String -> String -> Bool
-startsWith = undefined
+startsWith [] _ = True
+startsWith _ [] = False
+startsWith (x : xs) (y : ys) = x == y && startsWith xs ys
 
 tstartsWith :: Test
 tstartsWith = "startsWith" ~: (assertFailure "testcase for startsWith" :: Assertion)
@@ -228,7 +237,9 @@ tstartsWith = "startsWith" ~: (assertFailure "testcase for startsWith" :: Assert
 -- False
 
 endsWith :: String -> String -> Bool
-endsWith = undefined
+endsWith [] _ = True
+endsWith _ [] = False
+endsWith (x : xs) (y : ys) = endsWith xs ys && x == y
 
 tendsWith :: Test
 tendsWith = "endsWith" ~: (assertFailure "testcase for endsWith" :: Assertion)
@@ -252,7 +263,9 @@ tendsWith = "endsWith" ~: (assertFailure "testcase for endsWith" :: Assertion)
 -- [[1,3],[2,4]]
 -- (WARNING: this one is tricky!)
 transpose :: [[a]] -> [[a]]
-transpose = undefined
+transpose [] = []
+transpose ([]:xss) = transpose xss
+transpose ((x:xs):xss) = undefined
 
 ttranspose :: Test
 ttranspose = "transpose" ~: (assertFailure "testcase for transpose" :: Assertion)
@@ -268,7 +281,8 @@ ttranspose = "transpose" ~: (assertFailure "testcase for transpose" :: Assertion
 -- 5
 
 countSub :: String -> String -> Int
-countSub = undefined
+countSub _ [] = 0
+countSub sub str = undefined
 tcountSub :: Test
 tcountSub = "countSub" ~: (assertFailure "testcase for countSub" :: Assertion)
 
