@@ -268,7 +268,6 @@ tendsWith = "endsWith" ~:
 transpose :: [[a]] -> [[a]]
 transpose [] = []
 transpose ([]:xss) = []
-transpose (xs:[]) = []
 transpose xss = [h | (h:_) <- xss] : transpose [t | (_:t) <- xss]
 
 ttranspose :: Test
