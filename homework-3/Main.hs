@@ -110,11 +110,7 @@ tabc = "abc" ~: TestList [abc True False True  ~?= True,
 -- Part Two
 
 arithmetic :: ((Int, Int), Int) -> ((Int,Int), Int) -> (Int, Int, Int)
-arithmetic ((a, b), c) ((d, e), f) =
-  let x = ((b * f) - (c * e)) in
-  let y = ((c * d) - (a * f)) in
-  let z = ((a * e) - (b * d)) in
-    (x, y, z)
+arithmetic ((a, b), c) ((d, e), f) = ((b * f) - (c * e), (c * d) - (a * f), (a * e) - (b * d))
 
 tarithmetic :: Test
 tarithmetic = "arithmetic" ~:
@@ -271,8 +267,9 @@ tendsWith = "endsWith" ~:
 -- (WARNING: this one is tricky!)
 transpose :: [[a]] -> [[a]]
 transpose [] = []
-transpose ([]:xss) = transpose xss
-transpose ((x:xs):xss) = (x : [h | (h:_) <- xss]) : transpose (xs : [t | (_:t) <- xss])
+transpose ([]:xss) = []
+transpose (xs:[]) = []
+transpose xss = [h | (h:_) <- xss] : transpose [t | (_:t) <- xss]
 
 ttranspose :: Test
 ttranspose = 
@@ -292,6 +289,10 @@ ttranspose =
 
 countSub :: String -> String -> Int
 countSub _ [] = 0
+countSub [] str = len str + 1
+  where 
+    len [] = 0
+    len (x:xs) = 1 + len xs
 countSub sub (x:xs)
   | startsWith sub (x:xs) = 1 + countSub sub xs
   | otherwise = countSub sub xs
@@ -464,7 +465,7 @@ tconcat' =
 startsWith' :: String -> String -> Bool
 startsWith' [] _ = True
 startsWith' _ [] = False
-startsWith' sub str = False
+startsWith' sub str = foldr (\(x, y) acc -> x == y && acc) True (zip sub str)
 tstartsWith' = 
   "tstartsWith'" ~: 
     TestList[ "Hello" `startsWith'` "Hello World!" ~?= True,
@@ -507,7 +508,7 @@ redefine the function above so that the test cases still pass.
 -}
 
 tails' [] = [[]]
-tails' l = para (\_ xs acc -> xs : acc) [[]] l
+tails' l = para (\x xs acc -> (x:xs) : acc) [[]] l
 
 ttails :: Test
 ttails = "tails'" ~: TestList [
@@ -528,8 +529,6 @@ ttails = "tails'" ~: TestList [
 -- NOTE: use para for this one!
 
 endsWith' :: String -> String -> Bool
-endsWith' [] _ = True
-endsWith' _ [] = False
 endsWith' sub str = para (\_ xs acc -> xs == sub || acc) False str
 
 tendsWith' :: Test
@@ -549,6 +548,7 @@ tendsWith' =
 -- (You may use the para and startsWith' functions in countSub'.)
 
 countSub'  :: String -> String -> Int
+countSub' [] str = 1 + foldr (\_ acc -> acc + 1) 0 str
 countSub' sub str = para (\_ xs acc -> if startsWith' sub xs then 1 + acc else acc) 0 str
 tcountSub' = 
   "countSub'" ~: 
@@ -599,9 +599,9 @@ foldTree f e (Branch a n1 n2) = f a (foldTree f e n1) (foldTree f e n2)
 -- Branch 'a' Empty Empty
 
 appendTree :: Tree a -> Tree a -> Tree a
-appendTree Empty t2 = t2
-appendTree t1 Empty = t1
-appendTree t1 t2 = t1 -- mapTree (\x -> if x == Empty then t2 else x) t1
+-- appendTree Empty t2 = t2
+-- appendTree t1 Empty = t1
+appendTree t1 t2 = foldTree (\x l r -> Branch x l r) t2 t1
 tappendTree :: Test
 tappendTree = 
   "appendTree" ~: 
@@ -651,7 +651,7 @@ ttakeWhileTree =
 
 allTree :: (a -> Bool) -> Tree a -> Bool
 allTree f Empty = True
-allTree f t = foldTree (\x l r -> f x) True t
+allTree f t = foldTree (\x l r -> f x && l && r) True t
 tallTree :: Test
 tallTree = 
   "allTree" ~: 
@@ -672,7 +672,12 @@ tallTree =
 -- Branch 4 Empty Empty
 
 map2Tree :: (a -> b -> c) -> Tree a -> Tree b -> Tree c
-map2Tree f t1 t2 = Empty
+-- map2Tree f t1 Empty = Empty
+-- map2Tree f Empty t2 = Empty
+map2Tree f t1 t2 = foldTree merge (const Empty) t1 t2
+  where
+    merge x l r Empty = Empty
+    merge x1 l1 r1 (Branch x2 l2 r2) = Branch (f x1 x2) (l1 l2) (r1 r2)
 
 tmap2Tree :: Test
 tmap2Tree = 
