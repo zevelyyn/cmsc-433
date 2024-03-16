@@ -194,6 +194,7 @@ wMinMax =  Method "MinMax" [("x",TInt),("y",TInt)] [("min",TInt),("max",TInt)] [
 -- arraySpec.dfy
 wArraySpec = Method "ArrayTest" [("a",TArrayInt)] [("x",TInt)] [Requires (Predicate [] (Op2 (Op1 Len (Var (Name "a"))) Gt (Val (IntVal 0)))),Requires (Predicate [("i",TInt)] (Op2 (Op2 (Op2 (Op2 (Val (IntVal 0)) Le (Op2 (Var (Name "i")) Conj (Var (Name "i")))) Lt (Op1 Len (Var (Name "a")))) Implies (Var (Proj (Var (Name "a")) (Var (Name "i"))))) Gt (Val (IntVal 0)))),Ensures (Predicate [] (Op2 (Var (Name "x")) Gt (Val (IntVal 0))))] (Block [Assign (Name "x") (Var (Proj (Var (Name "a")) (Val (IntVal 0)))),Empty])
 
+-- fib
 tFib = Method 
   "ComputeFib" [("n", TInt)] [("b", TInt)] 
   [Requires (Predicate [] (Val (BoolVal True))), Ensures (Predicate [] (Op2 (Var (Name "b")) Eq (Val (IntVal 55))))]
@@ -215,6 +216,9 @@ tFib = Method
         ])
       ])
   ])
+
+-- two loops
+wTwo = Method "TwoLoops" [("a",TInt),("b",TInt),("c",TInt)] [("x",TInt),("y",TInt),("z",TInt)] [Requires (Predicate [] (Op2 (Var (Name "a")) Gt (Val (IntVal 0)))),Requires (Predicate [] (Op2 (Var (Name "b")) Gt (Val (IntVal 0)))),Requires (Predicate [] (Op2 (Var (Name "c")) Gt (Val (IntVal 0)))),Ensures (Predicate [] (Op2 (Var (Name "z")) Eq (Op2 (Op2 (Var (Name "a")) Plus (Var (Name "b"))) Plus (Var (Name "c")))))] (Block [Assign (Name "x") (Val (IntVal 0)),Empty,Assign (Name "y") (Val (IntVal 0)),Empty,Assign (Name "z") (Var (Name "c")),Empty,While [Predicate [] (Op2 (Var (Name "x")) Le (Var (Name "a"))),Predicate [] (Op2 (Var (Name "y")) Eq (Val (IntVal 0))),Predicate [] (Op2 (Var (Name "z")) Eq (Op2 (Op2 (Var (Name "x")) Plus (Var (Name "y"))) Plus (Var (Name "c"))))] (Op2 (Var (Name "x")) Lt (Var (Name "a"))) (Block [Assign (Name "x") (Op2 (Var (Name "x")) Plus (Val (IntVal 1))),Empty,Assign (Name "z") (Op2 (Var (Name "z")) Plus (Val (IntVal 1))),Empty]),While [Predicate [] (Op2 (Var (Name "y")) Le (Var (Name "b"))),Predicate [] (Op2 (Var (Name "x")) Eq (Var (Name "a"))),Predicate [] (Op2 (Var (Name "z")) Eq (Op2 (Op2 (Var (Name "a")) Plus (Var (Name "y"))) Plus (Var (Name "c"))))] (Op2 (Var (Name "y")) Lt (Var (Name "b"))) (Block [Assign (Name "y") (Op2 (Var (Name "y")) Plus (Val (IntVal 1))),Empty,Assign (Name "z") (Op2 (Var (Name "z")) Plus (Val (IntVal 1))),Empty])])
 
 {- | A Pretty Printer for Lu |
    ===========================
@@ -368,7 +372,6 @@ instance PP Bop where
   pp Disj   = PP.text "||"
   pp Implies= PP.text "==>"
   pp Iff    = PP.text "<->"
-  pp _ = undefined
 
 -- | Types and bindings can be pretty printed
 
@@ -456,7 +459,7 @@ instance PP Statement where
     pp "while" <+> PP.parens (pp expr)
     PP.$$ PP.nest 2 (PP.vcat (map pp pred))
     PP.$$ pp "{"
-    PP.$$ PP.nest 2 (pp b)
+    PP.$$ pp "" PP.$$ PP.nest 2 (pp b)
     PP.$$ pp "}"
 
 -- | TODO: Implement pretty printing for predicates
@@ -480,6 +483,6 @@ instance PP Method where
     <+> PP.parens (PP.hcat (PP.punctuate (pp ", ") (map pp bind2)))
     PP.$$ PP.nest 2 (PP.vcat (map pp spec))
     PP.$$ pp "{" 
-    PP.$$ PP.nest 2 (pp block)
+    PP.$$ pp "" PP.$$ PP.nest 2 (pp block)
     PP.$$ pp "}"
 
