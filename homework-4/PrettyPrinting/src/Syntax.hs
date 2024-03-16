@@ -246,6 +246,8 @@ tSwap = Method "Swap" [("a",TArrayInt),("i",TInt),("j",TInt)] []
             (Assign (Proj (Var (Name "a")) (Var (Name "i"))) (Var (Proj (Var (Name "a")) (Var (Name "j"))))),
             (Assign (Proj (Var (Name "a")) (Var (Name "j"))) (Var (Name "tmp"))), Empty])
 
+tLoopZero = Method "LoopToZero" [("m",TInt),("p",TInt)] [("x",TInt),("z",TInt)] [Requires (Predicate [] (Val (BoolVal True))),Ensures (Predicate [] (Op2 (Var (Name "z")) Eq (Op2 (Var (Name "p")) Minus (Var (Name "m")))))] (Block [Assign (Name "x") (Var (Name "m")),Empty,Assign (Name "z") (Var (Name "p")),Empty,While [Predicate [] (Op2 (Op2 (Var (Name "z")) Minus (Var (Name "x"))) Eq (Op2 (Var (Name "p")) Minus (Var (Name "m"))))] (Op2 (Var (Name "x")) Gt (Val (IntVal 0))) (Block [Assign (Name "z") (Op2 (Var (Name "z")) Minus (Val (IntVal 1))),Empty,Assign (Name "x") (Op2 (Var (Name "x")) Minus (Val (IntVal 1))),Empty])])
+
 {- | A Pretty Printer for Lu |
    ===========================
 
@@ -369,8 +371,8 @@ instance PP Int where
 
 -- | TODO: Implement pretty printing for Booleans and lists of integers
 instance PP Bool where
-  pp True = PP.text "True"
-  pp False = PP.text "False"
+  pp True = PP.text "true"
+  pp False = PP.text "false"
 
 instance PP [Int] where
   pp xs = PP.brackets $ PP.hcat (PP.punctuate (pp ", ") (map pp xs))
