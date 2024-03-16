@@ -220,6 +220,32 @@ tFib = Method
 -- two loops
 wTwo = Method "TwoLoops" [("a",TInt),("b",TInt),("c",TInt)] [("x",TInt),("y",TInt),("z",TInt)] [Requires (Predicate [] (Op2 (Var (Name "a")) Gt (Val (IntVal 0)))),Requires (Predicate [] (Op2 (Var (Name "b")) Gt (Val (IntVal 0)))),Requires (Predicate [] (Op2 (Var (Name "c")) Gt (Val (IntVal 0)))),Ensures (Predicate [] (Op2 (Var (Name "z")) Eq (Op2 (Op2 (Var (Name "a")) Plus (Var (Name "b"))) Plus (Var (Name "c")))))] (Block [Assign (Name "x") (Val (IntVal 0)),Empty,Assign (Name "y") (Val (IntVal 0)),Empty,Assign (Name "z") (Var (Name "c")),Empty,While [Predicate [] (Op2 (Var (Name "x")) Le (Var (Name "a"))),Predicate [] (Op2 (Var (Name "y")) Eq (Val (IntVal 0))),Predicate [] (Op2 (Var (Name "z")) Eq (Op2 (Op2 (Var (Name "x")) Plus (Var (Name "y"))) Plus (Var (Name "c"))))] (Op2 (Var (Name "x")) Lt (Var (Name "a"))) (Block [Assign (Name "x") (Op2 (Var (Name "x")) Plus (Val (IntVal 1))),Empty,Assign (Name "z") (Op2 (Var (Name "z")) Plus (Val (IntVal 1))),Empty]),While [Predicate [] (Op2 (Var (Name "y")) Le (Var (Name "b"))),Predicate [] (Op2 (Var (Name "x")) Eq (Var (Name "a"))),Predicate [] (Op2 (Var (Name "z")) Eq (Op2 (Op2 (Var (Name "a")) Plus (Var (Name "y"))) Plus (Var (Name "c"))))] (Op2 (Var (Name "y")) Lt (Var (Name "b"))) (Block [Assign (Name "y") (Op2 (Var (Name "y")) Plus (Val (IntVal 1))),Empty,Assign (Name "z") (Op2 (Var (Name "z")) Plus (Val (IntVal 1))),Empty])])
 
+-- inc
+tIncAll = Method "IncAll" [("a1",TArrayInt)] [("a2",TArrayInt)] []
+        (Block [(New ("a3", TArrayInt) (Op1 Len (Var (Name "a1")))),
+            (Decl ("i", TInt) (Val (IntVal 0))),
+            (While [(Predicate [] (Op2 (Var (Name "i")) Le (Op1 Len (Var (Name "a3")))))]
+              (Op2 (Var (Name "i")) Lt (Op1 Len (Var (Name "a3"))))
+              (Block [(Assign (Proj (Var (Name "a3")) (Var (Name "i"))) (Op2 (Var (Proj (Var (Name "a3")) (Var (Name "i")))) Plus (Val (IntVal 1)))),
+                  (Assign (Name "i") (Op2 (Var (Name "i")) Plus (Val (IntVal 1)))), Empty])),
+            (Assign (Name "a2") (Var (Name "a3"))), Empty])
+
+-- swap
+tSwap = Method "Swap" [("a",TArrayInt),("i",TInt),("j",TInt)] []
+        [(Requires (Predicate [] (Op2
+            (Op2
+                (Op2 (Val (IntVal 0)) Le (Var (Name "i")))
+                  Conj
+                (Op2 (Var (Name "i")) Lt (Op1 Len (Var (Name "a")))))
+              Conj
+            (Op2
+                (Op2 (Val (IntVal 0)) Le (Var (Name "j")))
+                  Conj
+                (Op2 (Var (Name "j")) Lt (Op1 Len (Var (Name "a")))))))), (Modifies "a")]
+        (Block [(Decl ("tmp", TInt) (Var (Proj (Var (Name "a")) (Var (Name "i"))))),
+            (Assign (Proj (Var (Name "a")) (Var (Name "i"))) (Var (Proj (Var (Name "a")) (Var (Name "j"))))),
+            (Assign (Proj (Var (Name "a")) (Var (Name "j"))) (Var (Name "tmp"))), Empty])
+
 {- | A Pretty Printer for Lu |
    ===========================
 
@@ -362,7 +388,7 @@ instance PP Bop where
   pp Times  = PP.char '*'
   pp Divide = PP.char '/'
   pp Modulo = PP.char '%'
-  pp Eq     = PP.char '='
+  pp Eq     = PP.text "=="
   pp Neq    = PP.text "!="
   pp Gt     = PP.char '>'
   pp Ge     = PP.text ">="
@@ -442,7 +468,7 @@ instance PP Block where
 instance PP Statement where
   pp Empty = PP.empty
   pp (Decl bind expr) = (pp "var" <+> pp bind <+> pp ":=" <+> pp expr) <> pp ";"
-  pp (New bind expr) = (pp "var" <+> pp ":=" <+> pp expr) <> pp ";"
+  pp (New bind expr) = ((pp "var" <+> pp bind <+> pp ":=" <+> pp "new" <+> pp "int") <> PP.brackets (pp expr)) <> pp ";"
   pp (Assert pred) = PP.parens $ pp "assert" <+> pp pred
   pp (Assign var expr) = (pp var <+> pp ":=" <+> pp expr) <> pp ";"
   pp (If expr b1 (Block [])) = 
@@ -457,7 +483,7 @@ instance PP Statement where
     PP.$$ pp "}"
   pp (While pred expr b) = 
     pp "while" <+> PP.parens (pp expr)
-    PP.$$ PP.nest 2 (PP.vcat (map pp pred))
+    PP.$$ PP.nest 2 (PP.vcat (map (\p -> pp "invariant" <+> pp p) pred))
     PP.$$ pp "{"
     PP.$$ pp "" PP.$$ PP.nest 2 (pp b)
     PP.$$ pp "}"
