@@ -32,7 +32,6 @@ import Syntax
 import Parser (Parser, satisfy)
 import qualified Parser as P
 import Test.HUnit  (runTestTT,Test(..),Assertion, (~?=), (~:), assert, Counts)
-import Control.Monad (guard)
 
 {- | Testing your Parser
       ------------------
@@ -147,7 +146,6 @@ intValP = IntVal <$> P.int <* many P.space
 boolValP :: Parser Value
 boolValP = BoolVal <$> (True <$ P.string "true" <|> False <$ P.string "false") <* many P.space
 
-
 -- | At this point you should be able to run tests using the `prop_roundtrip_val` property. 
 
 {- | Parsing Types
@@ -207,7 +205,7 @@ varP :: Parser Var
 varP = projP <|> (Name <$> nameP)
 
 projP :: Parser Var
-projP = Proj <$> nameP <*> brackets (Val <$> valueP)
+projP = Proj <$> nameP <*> brackets expP
 
 {- | 
 Define an expression parser for names. Names can be any sequence of upper and
@@ -275,10 +273,10 @@ bindingP = (,) <$> nameP <* stringP ":" <*> typeP
 predicateP :: Parser Predicate
 predicateP = forallPredicate <|> regularPredicate
   where
-    regularPredicate = Predicate <$> parens (many bindingP) <*> expP
+    regularPredicate = Predicate [] <$> (expP <|> parens expP)
     forallPredicate = 
       Predicate 
-        <$> (stringP "forall" *> parens (many bindingP) <* stringP "::") 
+        <$> (stringP "forall" *> many bindingP <* stringP "::") 
         <*> expP
 -- predicateP = forallP <|> Predicate <$> parens (many bindingP) <*> expP
 
@@ -288,11 +286,11 @@ predicateP = forallPredicate <|> regularPredicate
 
 statementP :: Parser Statement
 statementP = 
-     Decl <$> bindingP <* stringP ":=" <*> expP <* (stringP ";" <|> pure ()) <|>
+     Decl <$> (stringP "var" *> bindingP) <* stringP ":=" <*> expP <|>
      Assert <$> (stringP "assert" *> predicateP) <|>
      Assign <$> varP <* stringP ":=" <*> expP <|>
      If <$> (stringP "if" *> expP) <*> blockP <*> (stringP "else" *> blockP <|> pure (Block [])) <|>
-     While <$> (stringP "while" *> many predicateP) <*> expP <*> blockP <|>
+     While <$> (stringP "while" *> many (stringP "invariant" *> predicateP)) <*> expP <*> blockP <|>
      Empty <$ stringP ";"
 
 -- | ... and one for blocks.
@@ -315,7 +313,7 @@ specificationP =
 -}
 
 methodP :: Parser Method
-methodP = Method <$> name <*> args <*> returns <*> specs <*> body
+methodP = Method <$> name <*> args <*> (returns <|> pure []) <*> specs <*> body
   where
     name = stringP "method" *> nameP
     args = parens (P.sepBy bindingP (stringP ","))
