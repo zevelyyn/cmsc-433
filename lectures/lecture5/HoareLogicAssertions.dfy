@@ -1114,6 +1114,32 @@ method factorial(n:nat) returns (x:nat)
 /** Using your definition [factorial], write a decorated program that
     implements the factorial function. */
 
+/*
+
+  var i := n;
+  { 1 * fact(n) == fact(n) }
+  x := 1;
+  { fact(i) * x == fact(n) }
+  while (i > 0) {
+    { i >= 0 && i > 0 && fact(i) * x == fact(n) } ->>
+    { i - 1 >= 0 && fact(i - 1) * (x * i) == fact(n) }
+    x := x * i;
+    { i - 1 >= 0 && fact(i - 1) * x == fact(n) }
+    i := i - 1;
+    { i >= 0 && fact(i) * x == fact(n) }
+  }
+  { i >= 0 && !(i > 0) && fact(i) * x == fact(n) } ->>
+  { x := fact(n)}
+
+
+  planning:
+  x       i
+  1       n 
+  n       n-1
+  fact(n) 0
+  x * fact(i) = fact(n)
+*/
+
 /* ================================================================= */
 /** ** Exercise: Minimum 
 
@@ -1164,26 +1190,31 @@ Definition two_loops_dec (a b c : nat) : decorated :=
     { true } ->>
     { FILL_IN_HERE }
       x := 0
-                   { FILL_IN_HERE };
+                   { c == x + c }
       y := 0
-                   { FILL_IN_HERE };
+                   { c == y + c }
       z := c
-                   { P };
+                   { z == x + c };
       while x != a {
+                   { x != a && z == x + c } ->>
+                   { z + 1 == (x + 1) + c }
+        x := x + 1;
+                   { z + 1 == x + c }
+        z := z + 1;
+                   { z == x + c }
+      }
+                   { !(x != a) && z == x + c } ->>
+                   { z == a + c }
+
+
+
                    { FILL_IN_HERE } ->>
                    { FILL_IN_HERE }
-        x := x + 1
-                   { FILL_IN_HERE };
-        z := z + 1
-                   { FILL_IN_HERE }
-      end
-                   { FILL_IN_HERE } ->>
-                   { FILL_IN_HERE };
       while y != b {
                    { FILL_IN_HERE } ->>
                    { FILL_IN_HERE }
         y := y + 1
-                   { FILL_IN_HERE };
+                   { FILL_IN_HERE }
         z := z + 1
                    { FILL_IN_HERE }
       }

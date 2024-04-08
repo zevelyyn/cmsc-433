@@ -952,7 +952,9 @@ range :: Int -> Int -> [Int]
 **Step 3**: Define the function. This part is for you to do for your quiz.
 -}
 
-range i j = undefined
+range i j 
+  | i > j = []
+  | otherwise = i : (range (1 + 1) j)
 
 {-
 **Step 4**: Run the tests.
@@ -1121,7 +1123,8 @@ listIncr :: [Int] -> [Int]
 **Step 3**: Define the function.
 -}
 
-listIncr = undefined
+listIncr [] = []
+listIncr (x:xs) = (x + 1) : (listIncr xs)
 
 {-
 **Step 4**: Run the tests.
@@ -1130,3 +1133,21 @@ listIncr = undefined
 runLITests :: IO Counts
 runLITests = runTestTT listIncrTests
 
+-- given function, what is type?
+
+-- zipWith :: (a -> b -> c) -> [a] -> [b] -> [c]
+-- (:) :: a -> [a] -> [a]
+foo1 = zipWith (:) [1..3] 
+foo1 :: [[Int]] -> [[Int]]
+
+-- foldr (+) :: 
+
+foo2 :: a -> Maybe a
+foo2 = \a -> Just a 
+
+-- foo3 [1,2,3] [[4,5,6], [0,0], [7,8]] = [[1,4,5,6], [2,0,0], [3,7,8]]
+foo3 :: [Int] -> [[Int]] -> [[Int]]
+-- foo3 = zipWith (:)
+foo3 [] _ = []
+foo3 _ [] = []
+foo3 (x:xs) (ls:lss) = (x:ls) : foo xs lss
