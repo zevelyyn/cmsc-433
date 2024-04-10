@@ -11,21 +11,3 @@ method FindMinVal (a : array<int>) returns (min : int)
     i := i+1;
   }
 }
-
-
-method Cube(m:int) returns (y:int)
-  requires m>0
-  ensures y==m*m*m
-{
-  y := 0;
-  var x := m * m;
-  var z := m;
-  while (z >0)
-    invariant y == m*m*m - z*x
-    invariant z >= 0
-    // invariant x == m*m
-  {
-    z := z - 1;
-    y := y + x;
-  }
-}

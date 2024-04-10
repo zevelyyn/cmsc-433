@@ -290,8 +290,12 @@ statementP =
      Assert <$> (stringP "assert" *> predicateP) <|>
      Assign <$> varP <* stringP ":=" <*> expP <|>
      If <$> (stringP "if" *> expP) <*> blockP <*> (stringP "else" *> blockP <|> pure (Block [])) <|>
-     While <$> (stringP "while" *> many (stringP "invariant" *> predicateP)) <*> expP <*> blockP <|>
+     (\a b c -> While b a c) <$> (stringP "while" *> (parens expP <|> expP)) <*> many (stringP "invariant" *> predicateP) <*> blockP <|>
+    --  While <$>  <|>
      Empty <$ stringP ";"
+  -- where
+  --    expression = parens expP <|> expP
+  --    invariant = many (stringP "invariant" *> predicateP)
 
 -- | ... and one for blocks.
 
