@@ -85,7 +85,10 @@ class Subst a where
 
 instance Subst Expression where
   subst (Var (Proj _ _)) _ _ = error "Ignore arrays for this project"
-  subst (Var e) x e' = if e == x then e' else Var e
+  subst (Var (Name e)) x e' = if e == x then e' else Var (Name e)
+  subst (Val v) _ _ = Val v
+  subst (Op1 uop e) x e' = Op1 uop (subst e x e')
+  subst (Op2 e1 bop e2) x e' = Op2 (subst e1 x e') bop (subst e2 x e')
 
 -- | As an example, consider the loop invariant of Square:
 --
@@ -191,6 +194,7 @@ class WP a where
 instance WP Statement where
   wp (Assert _) p = error "Ignore assert for this project"
   wp (Assign (Proj _ _) _) p = error "Ignore arrays for this project"
+  wp (Assign (Name x) e') p = subst p x e'
   wp (Decl _ _) p = p  -- No effect on postcondition
   wp (If e b1 b2) p = wpIf e b1 b2 p
   wp (While inv _ _) p = inv  -- Loop invariant is the weakest precondition
@@ -198,9 +202,9 @@ instance WP Statement where
 
 wpIf :: Expression -> Block -> Block -> Predicate -> Predicate
 wpIf e b1 b2 p =
-  let p1 = wpBlock b1 p
-      p2 = wpBlock b2 p
-  in Op2 e Imp (Op2 (Not e) Imp (Op2 p1 And p2))
+  let Predicate p1 = wp b1 p
+      Predicate p2 = wp b2 p
+  in Predicate (Op2 e Implies (Op2 (Op1 Not e) Implies (Op2 p1 Conj p2)))
 
 -- | You will also need to implement weakest preconditions for blocks
 --   of statements, by repeatedly getting the weakest precondition
@@ -262,10 +266,10 @@ test_vcStmt =
 
 -- | To implement this, first, calculate the latter two for a single (While) statement:
 vcStmt :: Predicate -> Statement -> [Predicate]
-vcStmt (Predicate p) (While (Predicate inv) e b) = 
-  let wpBody = foldr wp (Predicate inv) stmts
-      vc1 = Predicate (Op2 (Op2 inv And e) Imp wpBody)
-      vc2 = Predicate (Op2 (Op2 inv And (Op1 Not e)) Imp (Predicate p))
+vcStmt (Predicate p) (While (Predicate inv) e (Block b)) = 
+  let Predicate wpBody = foldr wp (Predicate inv) b
+      vc1 = Predicate (Op2 (Op2 inv Conj e) Implies wpBody)
+      vc2 = Predicate (Op2 (Op2 inv Conj (Op1 Not e)) Implies p)
   in [vc1, vc2]
 vcStmt _ _ = []
 
@@ -276,7 +280,7 @@ vcBlock p (Block (x:xs)) =
   let vcStmts = case x of
                   While inv e b -> vcStmt p (While inv e b)
                   _ -> []
-  in vcStmts ++ vcBlock (wpBlock (Block [x]) p) (Block xs)
+  in vcStmts ++ vcBlock (wp (Block [x]) p) (Block xs)
 
 {- | Lifting to Methods |
    ----------------------
@@ -306,13 +310,14 @@ ensures (_ : ps) = ensures ps
        method block give rise to.
 -}
 vc :: Method -> [Predicate] 
-vc (Method _ _ _ specs (Block ss)) =
+vc (Method _ _ _ specs (Block b)) =
   let e = ensures specs
       r = requires specs
-      wpBody = wpBlock (Block ss) e
-      vcBody = vcBlock r (Block ss)
+      Predicate wpBody = wp (Block b) (Predicate e) -- give Predicate
+      vcBody = vcBlock (Predicate r) (Block b) -- gives [Predicate]
   in
-  Predicate (Op2 r Imp wpBody) : vcBody
+  Predicate (Op2 r Implies wpBody) : vcBody
+  -- Op2 Expression Bop Expression 
 
 -- | As a complete end-to-end test, the verification conditions for the whole of
 --   the Square method is the list of the following three expressions (in order):
