@@ -313,17 +313,26 @@ vc :: Method -> [Predicate]
 vc (Method _ _ _ specs (Block b)) =
   let e = ensures specs
       r = requires specs
-      Predicate wpBody = wp (Block b) (Predicate e) -- give Predicate
-      vcBody = vcBlock (Predicate r) (Block b) -- gives [Predicate]
+      Predicate wpBody = wp (Block b) (Predicate r) -- give Predicate
+      vcBody = vcBlock (Predicate e) (Block b) -- gives [Predicate]
   in
   Predicate (Op2 r Implies wpBody) : vcBody
   -- Op2 Expression Bop Expression 
 
 -- | As a complete end-to-end test, the verification conditions for the whole of
 --   the Square method is the list of the following three expressions (in order):
+-- Right (Op2 (Var (Name "x")) Gt (Op2 (Val (IntVal 0)) Conj (Val (BoolVal True))))
 -- x > 0 && true ==> (0 <= x && 0 == 0 * x)
+-- issue for implies .. Conj 0 == 0 * x:
+-- I have: y * x, it should be: 0 * x
+
+-- Right (Op2 (Op2 (Op2 (Var (Name "y")) Le (Op2 (Var (Name "x")) Conj (Var (Name "z")))) Eq (Op2 (Op2 (Var (Name "y")) Times (Var (Name "x"))) Conj (Var (Name "y")))) Lt (Var (Name "x")))
 -- y <= x && z == y * x && y < x ==> (y + 1 <= x && z + x == (y + 1) * x)
+-- Right (Op2 (Op2 (Var (Name "y")) Le (Op2 (Var (Name "x")) Conj (Var (Name "z")))) Eq (Op2 (Op2 (Var (Name "y")) Times (Var (Name "x"))) Conj (Op1 Not (Op2 (Var (Name "y")) Lt (Var (Name "x"))))))
+ 
 -- y <= x && z == y * x && ! (y < x) ==> (z == x * x && true)
+-- issue for implies z == x * x:
+-- I have: x > 0, it should be z == x * x (ENSURES)
 
 vcSquare :: [Predicate]
 vcSquare = [ Predicate (Op2 (Op2 (Op2 (Var (Name "x")) Gt (Val (IntVal 0))) Conj (Val (BoolVal True))) Implies (Op2 (Op2 (Val (IntVal 0)) Le (Var (Name "x"))) Conj (Op2 (Val (IntVal 0)) Eq (Op2 (Val (IntVal 0)) Times (Var (Name "x"))))))
