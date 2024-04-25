@@ -194,8 +194,8 @@ class WP a where
 instance WP Statement where
   wp (Assert _) p = error "Ignore assert for this project"
   wp (Assign (Proj _ _) _) p = error "Ignore arrays for this project"
-  wp (Assign (Name x) e') p = subst p x e'
-  wp (Decl _ _) p = p  -- No effect on postcondition
+  wp (Assign (Name x) e) p = subst p x e
+  wp (Decl (x, _) e) p = subst p x e
   wp (If e b1 b2) p = wpIf e b1 b2 p
   wp (While inv _ _) p = inv  -- Loop invariant is the weakest precondition
   wp Empty p = p  -- No effect on postcondition
@@ -279,10 +279,11 @@ vcBlock (Predicate p) (Block b) = foldr process [] b
   where
     process :: Statement -> [Predicate] -> [Predicate]
     process s [] = vcStmt (Predicate p) s
-    process s (c : cs) = 
-      let Predicate (Op2 left Implies _) = c in
-      let Op2 inv Conj _ = left in
-        (vcStmt (Predicate inv) s) ++ (c : cs)
+    process s (c : cs) =
+      let Predicate (Op2 left Implies _) = c
+          Op2 inv Conj _ = left
+      in
+        vcStmt (Predicate inv) s ++ (c : cs)
 -- vcBlock post (Block []) = []
 -- vcBlock post (Block (x:xs)) =
 -- vcBlock _ (Block []) = []
