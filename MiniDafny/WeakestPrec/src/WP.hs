@@ -100,7 +100,7 @@ wInv :: Expression
 wInv =  Op2 (Op2 (Var (Name "y")) Le (Var (Name "x")))
             Conj
             (Op2 (Var (Name "z")) Eq (Op2 (Var (Name "y")) Times (Var (Name "x"))))
-            
+
 -- | When propagating the loop invariant backwards inside the loop body,
 --   we substitute "y+1" for "y" and obtain:
 --
@@ -243,7 +243,7 @@ instance WP Block where
 --   z := z + x;
 --   y := y + 1;
 -- }
-wSquareWhile :: Statement 
+wSquareWhile :: Statement
 wSquareWhile = While (Predicate (Op2 (Op2 (Var (Name "y")) Le (Var (Name "x"))) Conj (Op2 (Var (Name "z")) Eq (Op2 (Var (Name "y")) Times (Var (Name "x")))))) (Op2 (Var (Name "y")) Lt (Var (Name "x"))) (Block [Assign (Name "z") (Op2 (Var (Name "z")) Plus (Var (Name "x"))),Empty,Assign (Name "y") (Op2 (Var (Name "y")) Plus (Val (IntVal 1))),Empty])
 
 -- | The post condition of Square
@@ -266,7 +266,7 @@ test_vcStmt =
 
 -- | To implement this, first, calculate the latter two for a single (While) statement:
 vcStmt :: Predicate -> Statement -> [Predicate]
-vcStmt (Predicate p) (While (Predicate inv) e (Block b)) = 
+vcStmt (Predicate p) (While (Predicate inv) e (Block b)) =
   let Predicate wpBody = foldr wp (Predicate inv) b
       vc1 = Predicate (Op2 (Op2 inv Conj e) Implies wpBody)
       vc2 = Predicate (Op2 (Op2 inv Conj (Op1 Not e)) Implies p)
@@ -275,12 +275,22 @@ vcStmt _ _ = []
 
 -- | Then, calculate the while loop verification conditions for blocks.
 vcBlock :: Predicate -> Block -> [Predicate]
-vcBlock _ (Block []) = []
-vcBlock p (Block (x:xs)) =
-  let vcStmts = case x of
-                  While inv e b -> vcStmt p (While inv e b)
-                  _ -> []
-  in vcStmts ++ vcBlock (wp (Block [x]) p) (Block xs)
+vcBlock (Predicate p) (Block b) = foldr process [] b
+  where
+    process :: Statement -> [Predicate] -> [Predicate]
+    process s [] = vcStmt (Predicate p) s
+    process s (c : cs) = 
+      let Predicate (Op2 left Implies _) = c in
+      let Op2 inv Conj _ = left in
+        (vcStmt (Predicate inv) s) ++ (c : cs)
+-- vcBlock post (Block []) = []
+-- vcBlock post (Block (x:xs)) =
+-- vcBlock _ (Block []) = []
+-- vcBlock p (Block (x:xs)) =
+--   let vcStmts = case x of
+--                   While inv e b -> vcStmt p (While inv e b)
+--                   _ -> []
+--   in vcStmts ++ vcBlock (wp (Block [x]) p) (Block xs)
 
 {- | Lifting to Methods |
    ----------------------
@@ -309,7 +319,7 @@ ensures (_ : ps) = ensures ps
      - Followed by the verification conditions that while loops in the
        method block give rise to.
 -}
-vc :: Method -> [Predicate] 
+vc :: Method -> [Predicate]
 vc (Method _ _ _ specs (Block b)) =
   let e = ensures specs
       r = requires specs
@@ -317,7 +327,6 @@ vc (Method _ _ _ specs (Block b)) =
       vcBody = vcBlock (Predicate e) (Block b) -- gives [Predicate]
   in
   Predicate (Op2 r Implies wpBody) : vcBody
-  -- Op2 Expression Bop Expression 
 
 -- | As a complete end-to-end test, the verification conditions for the whole of
 --   the Square method is the list of the following three expressions (in order):
@@ -329,7 +338,7 @@ vc (Method _ _ _ specs (Block b)) =
 -- Right (Op2 (Op2 (Op2 (Var (Name "y")) Le (Op2 (Var (Name "x")) Conj (Var (Name "z")))) Eq (Op2 (Op2 (Var (Name "y")) Times (Var (Name "x"))) Conj (Var (Name "y")))) Lt (Var (Name "x")))
 -- y <= x && z == y * x && y < x ==> (y + 1 <= x && z + x == (y + 1) * x)
 -- Right (Op2 (Op2 (Var (Name "y")) Le (Op2 (Var (Name "x")) Conj (Var (Name "z")))) Eq (Op2 (Op2 (Var (Name "y")) Times (Var (Name "x"))) Conj (Op1 Not (Op2 (Var (Name "y")) Lt (Var (Name "x"))))))
- 
+
 -- y <= x && z == y * x && ! (y < x) ==> (z == x * x && true)
 -- issue for implies z == x * x:
 -- I have: x > 0, it should be z == x * x (ENSURES)
