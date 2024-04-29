@@ -204,7 +204,8 @@ wpIf :: Expression -> Block -> Block -> Predicate -> Predicate
 wpIf e b1 b2 p =
   let Predicate p1 = wp b1 p
       Predicate p2 = wp b2 p
-  in Predicate (Op2 e Implies (Op2 (Op1 Not e) Implies (Op2 p1 Conj p2)))
+  -- in Predicate (Op2 e Implies (Op2 (Op1 Not e) Implies (Op2 p1 Conj p2)))
+  in Predicate (Op2 (Op2 e Implies p1) Conj (Op2 (Op1 Not e) Implies p2))
 
 -- | You will also need to implement weakest preconditions for blocks
 --   of statements, by repeatedly getting the weakest precondition
@@ -324,10 +325,10 @@ vc :: Method -> [Predicate]
 vc (Method _ _ _ specs (Block b)) =
   let e = ensures specs
       r = requires specs
-      Predicate wpBody = wp (Block b) (Predicate r) -- give Predicate
+      Predicate wpBody = wp (Block b) (Predicate e) -- give Predicate
       vcBody = vcBlock (Predicate e) (Block b) -- gives [Predicate]
   in
-  Predicate (Op2 r Implies wpBody) : vcBody
+  vcBody : Predicate (Op2 r Implies wpBody)
 
 -- | As a complete end-to-end test, the verification conditions for the whole of
 --   the Square method is the list of the following three expressions (in order):
@@ -341,8 +342,6 @@ vc (Method _ _ _ specs (Block b)) =
 -- Right (Op2 (Op2 (Var (Name "y")) Le (Op2 (Var (Name "x")) Conj (Var (Name "z")))) Eq (Op2 (Op2 (Var (Name "y")) Times (Var (Name "x"))) Conj (Op1 Not (Op2 (Var (Name "y")) Lt (Var (Name "x"))))))
 
 -- y <= x && z == y * x && ! (y < x) ==> (z == x * x && true)
--- issue for implies z == x * x:
--- I have: x > 0, it should be z == x * x (ENSURES)
 
 vcSquare :: [Predicate]
 vcSquare = [ Predicate (Op2 (Op2 (Op2 (Var (Name "x")) Gt (Val (IntVal 0))) Conj (Val (BoolVal True))) Implies (Op2 (Op2 (Val (IntVal 0)) Le (Var (Name "x"))) Conj (Op2 (Val (IntVal 0)) Eq (Op2 (Val (IntVal 0)) Times (Var (Name "x"))))))
