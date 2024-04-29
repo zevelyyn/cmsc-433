@@ -268,7 +268,7 @@ test_vcStmt =
 -- | To implement this, first, calculate the latter two for a single (While) statement:
 vcStmt :: Predicate -> Statement -> [Predicate]
 vcStmt (Predicate p) (While (Predicate inv) e (Block b)) =
-  let Predicate wpBody = foldr wp (Predicate inv) b
+  let Predicate wpBody = wp (Block b) (Predicate inv)
       vc1 = Predicate (Op2 (Op2 inv Conj e) Implies wpBody)
       vc2 = Predicate (Op2 (Op2 inv Conj (Op1 Not e)) Implies p)
   in [vc1, vc2]
@@ -276,23 +276,16 @@ vcStmt _ _ = []
 
 -- | Then, calculate the while loop verification conditions for blocks.
 vcBlock :: Predicate -> Block -> [Predicate]
-vcBlock (Predicate p) (Block b) = foldr process [] b
+vcBlock (Predicate p) (Block b) = snd $ foldr process (Predicate p, []) b
   where
-    process :: Statement -> [Predicate] -> [Predicate]
-    process s [] = vcStmt (Predicate p) s
-    process s (c : cs) =
-      let Predicate (Op2 left Implies _) = c
-          Op2 inv Conj _ = left
-      in
-        vcStmt (Predicate inv) s ++ (c : cs)
--- vcBlock post (Block []) = []
--- vcBlock post (Block (x:xs)) =
--- vcBlock _ (Block []) = []
--- vcBlock p (Block (x:xs)) =
---   let vcStmts = case x of
---                   While inv e b -> vcStmt p (While inv e b)
---                   _ -> []
---   in vcStmts ++ vcBlock (wp (Block [x]) p) (Block xs)
+    process s (p', acc) = (wp s p', vcStmt p' s ++ acc)
+    -- process :: Statement -> (Predicate, [Predicate]) -> [Predicate]
+    -- process s [] = vcStmt (Predicate p) s
+    -- process s (c : cs) =
+    --   let Predicate (Op2 left Implies _) = c
+    --       Op2 inv Conj _ = left
+    --   in
+    --     vcStmt (Predicate inv) s ++ (c : cs)
 
 {- | Lifting to Methods |
    ----------------------
@@ -328,7 +321,7 @@ vc (Method _ _ _ specs (Block b)) =
       Predicate wpBody = wp (Block b) (Predicate e) -- give Predicate
       vcBody = vcBlock (Predicate e) (Block b) -- gives [Predicate]
   in
-  vcBody : Predicate (Op2 r Implies wpBody)
+  Predicate (Op2 r Implies wpBody) : vcBody
 
 -- | As a complete end-to-end test, the verification conditions for the whole of
 --   the Square method is the list of the following three expressions (in order):
